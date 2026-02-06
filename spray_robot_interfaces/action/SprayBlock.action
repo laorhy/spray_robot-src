@@ -1,0 +1,10 @@
+# Execute a spray block with a given path
+
+string block_id
+spray_robot_interfaces/msg/SprayPath path
+---
+bool success
+string message
+---
+float32 progress   # [0..1]
+string current_stage

@@ -1,0 +1,150 @@
+<?xml version="1.0" ?>
+<sdf version="1.7">
+  <world name="spray_world">
+
+    <!-- 必要系统：物理、场景广播、传感器 -->
+    <plugin filename="libignition-gazebo-physics-system.so"
+            name="ignition::gazebo::systems::Physics"/>
+
+    <plugin filename="libignition-gazebo-scene-broadcaster-system.so"
+            name="ignition::gazebo::systems::SceneBroadcaster"/>
+
+    <plugin filename="libignition-gazebo-sensors-system.so"
+            name="ignition::gazebo::systems::Sensors"/>
+
+    
+    <!-- 光源 -->
+    <include>
+      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/Sun</uri>
+    </include>
+
+    <!-- 地面 -->
+    <include>
+      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/Ground Plane</uri>
+    </include>
+
+    <!-- 船体：使用 SolidWorks 导出的 STL 作为 visual -->
+    <model name="ship_hull">
+      <static>true</static>
+
+      <!-- 位置姿态沿用你之前的圆柱体 pose（按需微调） -->
+      <pose>0 0 0 0 0 0</pose>
+
+      <link name="ship_hull_base">
+
+        <!-- 可视化：高精度 STL -->
+        <visual name="ship_hull_visual">
+          <geometry>
+            <mesh>
+              <uri>file:///home/lao/spray_sim/meshes/ship_hull.STL</uri>
+              <!-- 如果导出单位不是米/或比例不对，在这里改 -->
+              <scale>1 1 1</scale>
+            </mesh>
+          </geometry>
+
+          <!-- 给个简单材质，避免一片黑 -->
+          <material>
+            <ambient>0.7 0.7 0.7 1</ambient>
+            <diffuse>0.7 0.7 0.7 1</diffuse>
+            <specular>0.1 0.1 0.1 1</specular>
+          </material>
+        </visual>
+
+      </link>
+    </model>
+
+
+    <!-- 喷涂系统基座 + 雷达 -->
+    <model name="spray_base">
+      <static>true</static>
+      <pose>-40 0 10 0 0 0</pose>
+      <link name="base_link">
+        <visual name="base_visual">
+          <geometry>
+            <box>
+              <size>0.5 0.5 6</size>
+            </box>
+          </geometry>
+          
+          <material>
+            <ambient>0.6 0.1 0.1</ambient>
+            <diffuse>0.8 0.1 0.1</diffuse>
+            <specular>0.2 0.2 0.2</specular>
+
+          </material>
+        </visual>
+
+        <!-- GPU LiDAR（top） -->
+        <sensor name="lidar_top" type="gpu_lidar">
+          <pose>0 0 6 0 0 0</pose>
+          <update_rate>10</update_rate>
+
+          <!-- Gazebo 内部 topic -->
+          <topic>/lidar/top</topic>
+
+          <lidar>
+            <scan>
+              <!-- 水平 360° -->
+              <horizontal>
+                <samples>2048</samples>
+                <min_angle>-3.14159</min_angle>
+                <max_angle> 3.14159</max_angle>
+              </horizontal>
+
+              <!-- 竖直 -7° ~ +52° -->
+              <vertical>
+                <samples>64</samples>
+                <min_angle>-0.122</min_angle>
+                <max_angle> 0.907</max_angle>
+              </vertical>
+            </scan>
+
+            <!-- 量程 0.1m ~ 40m -->
+            <range>
+              <min>0.1</min>
+              <max>40.0</max>
+            </range>
+          </lidar>
+        </sensor>
+
+
+        <!-- GPU LiDAR（bottom） -->
+        <sensor name="lidar_bottom" type="gpu_lidar">
+          <pose>0 0 0 0 0 0</pose>
+          <update_rate>10</update_rate>
+
+          <!-- Gazebo 内部 topic -->
+          <topic>/lidar/bottom</topic>
+
+          <lidar>
+            <scan>
+              <!-- 水平 360° -->
+              <horizontal>
+                <samples>2048</samples>
+                <min_angle>-3.14159</min_angle>
+                <max_angle> 3.14159</max_angle>
+              </horizontal>
+
+              <!-- 竖直 -7° ~ +52° -->
+              <vertical>
+                <samples>64</samples>
+                <min_angle>-0.122</min_angle>
+                <max_angle> 0.907</max_angle>
+              </vertical>
+            </scan>
+
+            <!-- 量程 0.1m ~ 40m -->
+            <range>
+              <min>0.1</min>
+              <max>40.0</max>
+            </range>
+          </lidar>
+        </sensor>
+
+
+      </link>
+    </model>
+
+  </world>
+</sdf>
+
