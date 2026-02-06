@@ -1,0 +1,2 @@
+from spray_robot_bringup.spray_sim_bringup import generate_launch_description
+
