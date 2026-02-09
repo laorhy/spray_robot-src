@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from itertools import chain
+import math
 
 import rclpy
 from message_filters import ApproximateTimeSynchronizer, Subscriber
@@ -118,12 +119,12 @@ class PointCloudFusionNode(Node):
         # 4. 读取转换后的点云数据
         top_points = list(
             point_cloud2.read_points(
-                transformed_top_msg, field_names=("x", "y", "z"), skip_nans=True
+                transformed_top_msg, field_names=("x", "y", "z"), skip_nans=False
             )
         )
         bottom_points = list(
             point_cloud2.read_points(
-                transformed_bottom_msg, field_names=("x", "y", "z"), skip_nans=True
+                transformed_bottom_msg, field_names=("x", "y", "z"), skip_nans=False
             )
         )
 
@@ -135,6 +136,15 @@ class PointCloudFusionNode(Node):
         header.frame_id = self.target_frame
         header.stamp = self.get_clock().now().to_msg()
         fused_msg = point_cloud2.create_cloud_xyz32(header, fused_points)
+        if (
+            top_msg.width == bottom_msg.width
+            and top_msg.height == bottom_msg.height
+            and top_msg.width > 0
+        ):
+            fused_msg.width = top_msg.width
+            fused_msg.height = top_msg.height + bottom_msg.height
+            fused_msg.row_step = fused_msg.point_step * fused_msg.width
+            fused_msg.is_dense = False
         self.fused_pub.publish(fused_msg)
 
         # 7. 感兴趣区域过滤
@@ -154,7 +164,10 @@ class PointCloudFusionNode(Node):
         return [
             (x, y, z)
             for x, y, z in points
-            if min_x <= x <= max_x
+            if math.isfinite(x)
+            and math.isfinite(y)
+            and math.isfinite(z)
+            and min_x <= x <= max_x
             and min_y <= y <= max_y
             and min_z <= z <= max_z
         ]
