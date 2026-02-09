@@ -6,7 +6,7 @@ import math
 import rclpy
 from message_filters import ApproximateTimeSynchronizer, Subscriber
 from rclpy.node import Node
-from rclpy.qos import qos_profile_sensor_data
+from rclpy.qos import qos_profile_sensor_data, QoSProfile, ReliabilityPolicy, HistoryPolicy
 from sensor_msgs.msg import PointCloud2
 from sensor_msgs_py import point_cloud2
 from tf2_ros import Buffer, TransformException
@@ -52,11 +52,17 @@ class PointCloudFusionNode(Node):
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
 
+        qos_profile = QoSProfile(
+            reliability=ReliabilityPolicy.RELIABLE,
+            history=HistoryPolicy.KEEP_LAST,
+            depth=5
+        )
+
         self.fused_pub = self.create_publisher(
-            PointCloud2, fused_topic, qos_profile_sensor_data
+            PointCloud2, fused_topic, qos_profile
         )
         self.roi_pub = self.create_publisher(
-            PointCloud2, roi_topic, qos_profile_sensor_data
+            PointCloud2, roi_topic, qos_profile
         )
 
         top_sub = Subscriber(self, PointCloud2, top_topic, qos_profile=qos_profile_sensor_data)
