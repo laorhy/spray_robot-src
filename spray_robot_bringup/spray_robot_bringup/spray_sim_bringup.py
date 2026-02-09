@@ -7,11 +7,16 @@ from launch import LaunchDescription, LaunchService
 from launch.actions import DeclareLaunchArgument, ExecuteProcess
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
+from ament_index_python.packages import get_package_share_directory
 
 
 def generate_launch_description() -> LaunchDescription:
-    world_default = os.path.expanduser("~/spray_sim/worlds/spray_lidar_world.sdf")
-    rviz_default = os.path.expanduser("~/ros2_ws/spray_robot-ws/rviz/spray.rviz")
+    # 获取spray_sim包的路径
+    spray_sim_dir = get_package_share_directory('spray_sim')
+    # 构建世界文件的相对路径
+    world_default = os.path.join(spray_sim_dir, 'worlds', 'spray_lidar_world.sdf')
+    # 从spray_sim包中获取rviz配置文件路径
+    rviz_default = os.path.join(spray_sim_dir, 'rviz', 'spray.rviz')
 
     return LaunchDescription(
         [
