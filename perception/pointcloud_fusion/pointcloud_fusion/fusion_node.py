@@ -19,7 +19,7 @@ class PointCloudFusionNode(Node):
 
         self.declare_parameter("top_topic", "/lidar/top/points")
         self.declare_parameter("bottom_topic", "/lidar/bottom/points")
-        self.declare_parameter("target_frame", "base_link")
+        self.declare_parameter("target_frame", "spray_base/base_link")
         self.declare_parameter("fused_topic", "/lidar/fused/points")
         self.declare_parameter("roi_topic", "/lidar/fused/roi")
         self.declare_parameter("roi.min_x", float('-inf'))
@@ -58,8 +58,9 @@ class PointCloudFusionNode(Node):
             PointCloud2, roi_topic, qos_profile_sensor_data
         )
 
-        top_sub = Subscriber(self, PointCloud2, top_topic, qos_profile_sensor_data)
-        bottom_sub = Subscriber(self, PointCloud2, bottom_topic, qos_profile_sensor_data)
+        top_sub = Subscriber(self, PointCloud2, top_topic, qos_profile=qos_profile_sensor_data)
+        bottom_sub = Subscriber(self, PointCloud2, bottom_topic, qos_profile=qos_profile_sensor_data)
+
         self.sync = ApproximateTimeSynchronizer(
             [top_sub, bottom_sub], queue_size=10, slop=0.1, allow_headerless=False
         )
@@ -73,44 +74,46 @@ class PointCloudFusionNode(Node):
 
     def _sync_callback(self, top_msg: PointCloud2, bottom_msg: PointCloud2) -> None:
         try:
-            top_tf = self.tf_buffer.lookup_transform(
+            # 1. 转换顶部激光雷达点云到目标坐标系
+            transformed_top_msg = self.tf_buffer.transform(
+                top_msg,
                 self.target_frame,
-                top_msg.header.frame_id,
-                top_msg.header.stamp,
-                rclpy.duration.Duration(seconds=0.2),
+                timeout=rclpy.duration.Duration(seconds=0.2)
             )
-            bottom_tf = self.tf_buffer.lookup_transform(
+            
+            # 2. 转换底部激光雷达点云到目标坐标系
+            transformed_bottom_msg = self.tf_buffer.transform(
+                bottom_msg,
                 self.target_frame,
-                bottom_msg.header.frame_id,
-                bottom_msg.header.stamp,
-                rclpy.duration.Duration(seconds=0.2),
+                timeout=rclpy.duration.Duration(seconds=0.2)
             )
         except TransformException as exc:
-            self.get_logger().warn(f"TF lookup failed: {exc}")
+            self.get_logger().warn(f"TF transform failed: {exc}")
             return
 
-        top_cloud = do_transform_cloud(top_msg, top_tf)
-        bottom_cloud = do_transform_cloud(bottom_msg, bottom_tf)
-
+        # 3. 读取转换后的点云数据
         top_points = list(
             point_cloud2.read_points(
-                top_cloud, field_names=("x", "y", "z"), skip_nans=True
+                transformed_top_msg, field_names=("x", "y", "z"), skip_nans=True
             )
         )
         bottom_points = list(
             point_cloud2.read_points(
-                bottom_cloud, field_names=("x", "y", "z"), skip_nans=True
+                transformed_bottom_msg, field_names=("x", "y", "z"), skip_nans=True
             )
         )
 
+        # 4. 合并点云数据
         fused_points = list(chain(top_points, bottom_points))
 
+        # 5. 创建新的点云消息
         header = top_msg.header
         header.frame_id = self.target_frame
         header.stamp = self.get_clock().now().to_msg()
         fused_msg = point_cloud2.create_cloud_xyz32(header, fused_points)
         self.fused_pub.publish(fused_msg)
 
+        # 6. 感兴趣区域过滤
         roi_points = self._filter_roi(fused_points)
         roi_msg = point_cloud2.create_cloud_xyz32(header, roi_points)
         self.roi_pub.publish(roi_msg)
