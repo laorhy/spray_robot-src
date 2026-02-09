@@ -36,7 +36,7 @@
         <visual name="ship_hull_visual">
           <geometry>
             <mesh>
-              <uri>file:///home/lao/spray_sim/meshes/ship_hull.STL</uri>
+              <uri>model://spray_sim/meshes/ship_hull.STL</uri>
               <!-- 如果导出单位不是米/或比例不对，在这里改 -->
               <scale>1 1 1</scale>
             </mesh>
