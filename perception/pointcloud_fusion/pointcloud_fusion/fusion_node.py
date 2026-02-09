@@ -22,12 +22,12 @@ class PointCloudFusionNode(Node):
         self.declare_parameter("target_frame", "base_link")
         self.declare_parameter("fused_topic", "/lidar/fused/points")
         self.declare_parameter("roi_topic", "/lidar/fused/roi")
-        self.declare_parameter("roi.min_x", -1.0)
-        self.declare_parameter("roi.max_x", 1.0)
-        self.declare_parameter("roi.min_y", -1.0)
-        self.declare_parameter("roi.max_y", 1.0)
-        self.declare_parameter("roi.min_z", -1.0)
-        self.declare_parameter("roi.max_z", 1.0)
+        self.declare_parameter("roi.min_x", float('-inf'))
+        self.declare_parameter("roi.max_x", float('inf'))
+        self.declare_parameter("roi.min_y", -3.0)
+        self.declare_parameter("roi.max_y", 3.0)
+        self.declare_parameter("roi.min_z", 0.0)
+        self.declare_parameter("roi.max_z", 6.0)
 
         top_topic = self.get_parameter("top_topic").get_parameter_value().string_value
         bottom_topic = (
