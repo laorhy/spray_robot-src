@@ -268,18 +268,13 @@ class PointCloudFusionNode(Node):
         top_tf_xyz = _pc2_to_xyz_np(top_tf_msg, skip_nans=True)
         bottom_tf_xyz = _pc2_to_xyz_np(bottom_tf_msg, skip_nans=True)
 
-        # 4) 拼接（只是中间态；后面会做体素融合/去噪）
+        # 4) 拼接（只是中间态；后面会做去噪 + 体素融合）
         fused_xyz = (
             top_tf_xyz if bottom_tf_xyz.shape[0] == 0
             else (bottom_tf_xyz if top_tf_xyz.shape[0] == 0 else np.vstack((top_tf_xyz, bottom_tf_xyz)))
         )
 
-        # 5) 体素融合（关键：避免重叠区域“加厚”）
-        if bool(self.get_parameter("voxel.enable").value):
-            voxel = float(self.get_parameter("voxel.size").value)
-            fused_xyz = voxel_downsample_centroid(fused_xyz, voxel)
-
-        # 6) 离群点剔除（可选）
+        # 5) 先离群点剔除（推荐先做：避免飞点被 voxel 质心“固化”）
         if bool(self.get_parameter("outlier.enable").value) and _HAS_KDTREE:
             method = str(self.get_parameter("outlier.method").value).lower()
             if method == "sor":
@@ -290,12 +285,20 @@ class PointCloudFusionNode(Node):
                 radius = float(self.get_parameter("outlier.radius").value)
                 min_n = int(self.get_parameter("outlier.min_neighbors").value)
                 fused_xyz = remove_outliers_ror(fused_xyz, radius=radius, min_neighbors=min_n)
-            # "none" 则跳过
+
+        # 6) 再体素融合（关键：均匀密度 + 去重，给 Poisson 更友好）
+        if bool(self.get_parameter("voxel.enable").value):
+            voxel = float(self.get_parameter("voxel.size").value)
+            fused_xyz = voxel_downsample_centroid(fused_xyz, voxel)
+
+        # （可选增强）voxel 后再做一次轻量 outlier，清理体素融合后残留孤点
+        if bool(self.get_parameter("outlier.enable").value) and _HAS_KDTREE:
+            fused_xyz = remove_outliers_sor(fused_xyz, mean_k=16, std_mul=1.0)
 
         # 7) 发布 fused
         header = top_msg.header
         header.frame_id = self.target_frame
-        header.stamp = self.get_clock().now().to_msg()  # 实时可视化/下游消费更直观
+        header.stamp = self.get_clock().now().to_msg()
         fused_msg = _xyz_np_to_pc2(header, fused_xyz)
         self.fused_pub.publish(fused_msg)
 
