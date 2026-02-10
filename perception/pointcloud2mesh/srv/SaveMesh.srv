@@ -1,0 +1,18 @@
+# Request
+string output_dir
+string filename_prefix
+bool save_ply
+bool save_stl
+int32 poisson_depth
+float32 scale
+float32 samples_per_node
+float32 point_weight
+int32 normal_k
+float32 wait_timeout_sec
+---
+# Response
+bool success
+string mesh_path
+int32 num_points
+int32 num_triangles
+string message
