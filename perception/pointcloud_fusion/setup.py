@@ -25,7 +25,7 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'pointcloud_fusion_node = pointcloud_fusion.fusion_node:main',
+            'pointcloud_fusion_node = pointcloud_fusion.fusion_node2:main',
         ],
     },
 )

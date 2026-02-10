@@ -7,6 +7,7 @@ def generate_launch_description():
             package='pointcloud_fusion',
             executable='pointcloud_fusion_node',
             name='pointcloud_fusion_node',
-            output='screen'
+            output='screen',
+            parameters=[{"use_sim_time": True}],
         ),
     ])
