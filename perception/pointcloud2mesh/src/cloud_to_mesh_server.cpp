@@ -97,7 +97,7 @@ private:
       std::lock_guard<std::mutex> lock(mutex_);
       latest_cloud_ = msg;
       latest_receive_time_ = this->now();
-      RCLCPP_DEBUG(this->get_logger(), "Received point cloud with %zu points", msg->width * msg->height);
+      RCLCPP_DEBUG(this->get_logger(), "Received point cloud with %u points", msg->width * msg->height);
       cv_.notify_all();
     } catch (const std::exception& e) {
       RCLCPP_ERROR(this->get_logger(), "Error processing point cloud: %s", e.what());
@@ -288,7 +288,7 @@ private:
         auto search_tree = pcl::make_shared<pcl::search::KdTree<pcl::PointXYZ>>();
         normal_estimator.setSearchMethod(search_tree);
         normal_estimator.compute(*normals);
-        RCLCPP_DEBUG(this->get_logger(), "Computed normals for %d points", normals->size());
+        RCLCPP_DEBUG(this->get_logger(), "Computed normals for %zu points", normals->size());
       } catch (const std::exception& e) {
         response->success = false;
         response->mesh_path = "";
@@ -301,7 +301,7 @@ private:
       auto cloud_with_normals = pcl::make_shared<pcl::PointCloud<pcl::PointNormal>>();
       try {
         pcl::concatenateFields(*cloud_xyz, *normals, *cloud_with_normals);
-        RCLCPP_DEBUG(this->get_logger(), "Concatenated fields, resulting in %d points with normals", cloud_with_normals->size());
+        RCLCPP_DEBUG(this->get_logger(), "Concatenated fields, resulting in %zu points with normals", cloud_with_normals->size());
       } catch (const std::exception& e) {
         response->success = false;
         response->mesh_path = "";
@@ -378,7 +378,7 @@ private:
       if (opts.save_stl) {
         const std::string stl_path = base_path + ".stl";
         try {
-          if (pcl::io::savePolygonFileSTL(stl_path, mesh) > 0) {
+          if (pcl::io::saveSTLFile(stl_path, mesh) > 0) {
             saved_paths.push_back(stl_path);
             RCLCPP_INFO(this->get_logger(), "Saved STL file: %s", stl_path.c_str());
           } else {
