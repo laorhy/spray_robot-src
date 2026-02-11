@@ -13,6 +13,7 @@
 #include <pcl/features/normal_3d_omp.h>
 #include <pcl/io/ply_io.h>
 #include <pcl/io/vtk_io.h>
+#include <pcl/io/stl_io.h>
 #include <pcl/point_types.h>
 #include <pcl/surface/poisson.h>
 
@@ -378,7 +379,7 @@ private:
       if (opts.save_stl) {
         const std::string stl_path = base_path + ".stl";
         try {
-          if (pcl::io::saveSTLFile(stl_path, mesh) > 0) {
+          if (pcl::io::saveSTLFileBinary(stl_path, mesh) > 0) {
             saved_paths.push_back(stl_path);
             RCLCPP_INFO(this->get_logger(), "Saved STL file: %s", stl_path.c_str());
           } else {
