@@ -12,7 +12,7 @@ from ament_index_python.packages import get_package_share_directory
 
 def generate_launch_description() -> LaunchDescription:
     # 获取spray_sim包的路径
-    spray_sim_dir = get_package_share_directory('spray_sim')
+    spray_sim_dir = get_package_share_directory('gazebo_sim')
     # 构建世界文件的相对路径
     world_default = os.path.join(spray_sim_dir, 'worlds', 'spray_lidar_world.sdf')
     # 从spray_sim包中获取rviz配置文件路径
